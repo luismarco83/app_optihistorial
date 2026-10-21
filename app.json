@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "OptiHistorial",
+    "slug": "optihistorial",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A4D8C"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.optihistorial.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A4D8C"
+      },
+      "package": "com.optihistorial.app"
+    },
+    "plugins": [],
+    "extra": {
+      "eas": {
+        "projectId": "3b678c4a-db4a-47bd-a273-ed67c9190987"
+      }
+    }
+  }
+}
