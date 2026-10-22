@@ -9,7 +9,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0A4D8C"
+      "backgroundColor": "#0B5CAD"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -21,7 +21,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0A4D8C"
+        "backgroundColor": "#0B5CAD"
       },
       "package": "com.optihistorial.app"
     },
@@ -30,6 +30,7 @@
       "eas": {
         "projectId": "3b678c4a-db4a-47bd-a273-ed67c9190987"
       }
-    }
+    },
+    "owner": "luisjose"
   }
 }
