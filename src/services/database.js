@@ -74,18 +74,30 @@ async function initTables() {
 
 // ========== PACIENTES ==========
 
+function normalizeText(str) {
+  if (!str) return '';
+  return str
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // quita acentos
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export async function getPacientes(busqueda = '') {
   const database = await getDB();
-  if (busqueda.trim()) {
-    const q = `%${busqueda.trim()}%`;
-    return await database.getAllAsync(
-      `SELECT * FROM pacientes WHERE eliminado = 0 AND (nombre LIKE ? OR telefono LIKE ?) ORDER BY nombre ASC`,
-      [q, q]
-    );
-  }
-  return await database.getAllAsync(
+  const all = await database.getAllAsync(
     `SELECT * FROM pacientes WHERE eliminado = 0 ORDER BY nombre ASC`
   );
+  if (!busqueda.trim()) return all;
+
+  const q = normalizeText(busqueda);
+  return all.filter((p) => {
+    const nombre = normalizeText(p.nombre);
+    const telefono = normalizeText(p.telefono);
+    return nombre.includes(q) || telefono.includes(q);
+  });
 }
 
 export async function getPacienteById(id) {

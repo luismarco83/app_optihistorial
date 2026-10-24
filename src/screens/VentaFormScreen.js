@@ -38,6 +38,12 @@ export default function VentaFormScreen({ route, navigation }) {
       return;
     }
 
+    if (!producto.trim()) {
+      Alert.alert('Error', 'El producto es obligatorio');
+      return;
+    }
+    const costoNum = parseFloat(costo.replace(',', '.')) || 0;
+
     setSaving(true);
     try {
       const ahora = new Date().toISOString();

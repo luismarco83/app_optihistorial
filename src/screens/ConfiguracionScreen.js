@@ -20,13 +20,26 @@ export default function ConfiguracionScreen() {
 
       await FileSystem.writeAsStringAsync(path, json, { encoding: FileSystem.EncodingType.UTF8 });
 
+      // Ofrecer guardar / compartir
       if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(path, {
-          mimeType: 'application/json',
-          dialogTitle: 'Guardar respaldo OptiHistorial',
-        });
+        Alert.alert(
+          'Respaldo listo',
+          'El archivo se generó correctamente. Elige dónde guardarlo (Descargas, Drive, WhatsApp, etc.).',
+          [
+            {
+              text: 'Guardar / Compartir',
+              onPress: async () => {
+                await Sharing.shareAsync(path, {
+                  mimeType: 'application/json',
+                  dialogTitle: 'Guardar respaldo OptiHistorial',
+                });
+              },
+            },
+            { text: 'Cancelar', style: 'cancel' },
+          ]
+        );
       } else {
-        Alert.alert('Respaldo generado', `Archivo guardado en: ${path}`);
+        Alert.alert('Respaldo generado', `Archivo guardado en:\n${path}`);
       }
     } catch (e) {
       Alert.alert('Error', e.message);

@@ -100,12 +100,6 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.fabText}>+ Nuevo Paciente</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={styles.configBtn}
-        onPress={() => navigation.navigate('Configuracion')}
-      >
-        <Text style={{ color: '#fff', fontSize: 18 }}>⚙️</Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -136,7 +130,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   container: { flex: 1, backgroundColor: '#f5f5f5' },
-  searchBox: { padding: 16, backgroundColor: '#fff' },
+  searchBox: { padding: 16, paddingRight: 16, backgroundColor: '#fff' },
   input: {
     backgroundColor: '#f0f0f0',
     borderRadius: 12,
@@ -183,15 +177,5 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   fabText: { color: '#fff', fontWeight: '600', fontSize: 15 },
-  configBtn: {
-    position: 'absolute',
-    top: 12,
-    right: 16,
-    backgroundColor: PRIMARY,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
 });

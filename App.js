@@ -28,7 +28,21 @@ function PacientesStack() {
         headerTitleStyle: { fontWeight: '600' },
       }}
     >
-      <Stack.Screen name="Home" component={HomeScreen} options={{ title: 'OptiHistorial' }} />
+      <Stack.Screen
+        name="Home"
+        component={HomeScreen}
+        options={({ navigation }) => ({
+          title: 'OptiHistorial',
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={() => navigation.navigate('Configuracion')}
+              style={{ marginRight: 16, padding: 4 }}
+            >
+              <Text style={{ color: '#fff', fontSize: 20 }}>⚙️</Text>
+            </TouchableOpacity>
+          ),
+        })}
+      />
       <Stack.Screen name="PacienteForm" component={PacienteFormScreen} options={{ title: 'Paciente' }} />
       <Stack.Screen name="PacienteDetail" component={PacienteDetailScreen} options={{ title: 'Detalle' }} />
       <Stack.Screen name="ConsultaForm" component={ConsultaFormScreen} options={{ title: 'Consulta' }} />
