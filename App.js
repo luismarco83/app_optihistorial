@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { Text } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 
 import HomeScreen from './src/screens/HomeScreen';
 import PacienteFormScreen from './src/screens/PacienteFormScreen';

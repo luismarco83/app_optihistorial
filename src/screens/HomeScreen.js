@@ -20,8 +20,12 @@ export default function HomeScreen({ navigation }) {
     try {
       const data = await getPacientes(busqueda);
       setPacientes(data);
-      const status = await getTrialStatus();
-      setTrialMsg(getTrialMessage(status));
+      try {
+        const status = await getTrialStatus();
+        setTrialMsg(getTrialMessage(status));
+      } catch (trialErr) {
+        console.warn('Trial check failed', trialErr);
+      }
     } catch (e) {
       console.error(e);
     } finally {
