@@ -52,7 +52,18 @@ export default function ConsultaFormScreen({ route, navigation }) {
   const [tipoLente, setTipoLente] = useState('');
   const [observaciones, setObservaciones] = useState('');
 
-  const tipos = ['Monofocal', 'Bifocal', 'Progresivo', 'Ocupacional', 'Lentes de contacto', 'Otro'];
+  function parseNum(val) {
+  if (val === '' || val === null || val === undefined) return null;
+  const n = parseFloat(String(val).replace(',', '.'));
+  return Number.isFinite(n) ? n : null;
+}
+function parseIntSafe(val) {
+  if (val === '' || val === null || val === undefined) return null;
+  const n = parseInt(String(val), 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+const tipos = ['Monofocal', 'Bifocal', 'Progresivo', 'Ocupacional', 'Lentes de contacto', 'Otro'];
 
   const guardar = async () => {
     const trial = await getTrialStatus();
@@ -71,15 +82,15 @@ export default function ConsultaFormScreen({ route, navigation }) {
         id: generateId(),
         paciente_id: pacienteId,
         fecha: ahora,
-        od_esfera: parseFloat(odEsfera) || null,
-        od_cilindro: parseFloat(odCilindro) || null,
-        od_eje: parseInt(odEje) || null,
-        od_adicion: parseFloat(odAdicion) || null,
-        oi_esfera: parseFloat(oiEsfera) || null,
-        oi_cilindro: parseFloat(oiCilindro) || null,
-        oi_eje: parseInt(oiEje) || null,
-        oi_adicion: parseFloat(oiAdicion) || null,
-        dp: parseFloat(dp) || null,
+        od_esfera: parseNum(odEsfera),
+        od_cilindro: parseNum(odCilindro),
+        od_eje: parseIntSafe(odEje),
+        od_adicion: parseNum(odAdicion),
+        oi_esfera: parseNum(oiEsfera),
+        oi_cilindro: parseNum(oiCilindro),
+        oi_eje: parseIntSafe(oiEje),
+        oi_adicion: parseNum(oiAdicion),
+        dp: parseNum(dp),
         av_od: avOd.trim() || null,
         av_oi: avOi.trim() || null,
         tipo_lente: tipoLente || null,
