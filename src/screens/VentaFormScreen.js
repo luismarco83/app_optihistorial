@@ -42,7 +42,11 @@ export default function VentaFormScreen({ route, navigation }) {
       Alert.alert('Error', 'El producto es obligatorio');
       return;
     }
-    const costoNum = parseFloat(costo.replace(',', '.')) || 0;
+    const costoNum = Number(String(costo).trim().replace(',', '.'));
+    if (!Number.isFinite(costoNum)) {
+      Alert.alert('Error', 'El costo es obligatorio');
+      return;
+    }
 
     setSaving(true);
     try {
