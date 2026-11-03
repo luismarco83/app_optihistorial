@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { insertVenta } from '../services/database';
 import { getTrialStatus } from '../services/trial';
+import { hoyTexto, parseFechaReal } from '../utils/fechas';
 
 const PRIMARY = '#0A4D8C';
 
@@ -27,6 +28,7 @@ export default function VentaFormScreen({ route, navigation }) {
   const [costo, setCosto] = useState('');
   const [estado, setEstado] = useState('pendiente');
   const [notas, setNotas] = useState('');
+  const [fechaReal, setFechaReal] = useState(hoyTexto());
 
   const guardar = async () => {
     const trial = await getTrialStatus();
@@ -48,13 +50,19 @@ export default function VentaFormScreen({ route, navigation }) {
       return;
     }
 
+    const fecha = parseFechaReal(fechaReal);
+    if (!fecha) {
+      Alert.alert('Error', 'Escribe la fecha real de la venta como dd/mm/aaaa');
+      return;
+    }
+
     setSaving(true);
     try {
       const ahora = new Date().toISOString();
       await insertVenta({
         id: generateId(),
         paciente_id: pacienteId,
-        fecha_venta: ahora,
+        fecha_venta: fecha,
         producto: producto.trim(),
         marca: marca.trim() || null,
         material: material.trim() || null,
@@ -75,6 +83,16 @@ export default function VentaFormScreen({ route, navigation }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.label}>Fecha real de la venta</Text>
+        <TextInput
+          style={styles.input}
+          value={fechaReal}
+          onChangeText={setFechaReal}
+          placeholder="dd/mm/aaaa"
+          keyboardType="numbers-and-punctuation"
+        />
+        <Text style={styles.hint}>Día de la venta. La fecha de captura se guarda sola.</Text>
+
         <Text style={styles.label}>Producto / Descripción *</Text>
         <TextInput style={styles.input} value={producto} onChangeText={setProducto} placeholder="Ej. Lente progresivo + montura" />
 
@@ -119,6 +137,7 @@ export default function VentaFormScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: { padding: 20 },
   label: { fontSize: 14, color: '#555', marginBottom: 6, marginTop: 12 },
+  hint: { fontSize: 12, color: '#777', marginBottom: 4 },
   input: {
     backgroundColor: '#f8f8f8',
     borderWidth: 1,

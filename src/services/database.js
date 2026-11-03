@@ -146,9 +146,18 @@ export async function updatePaciente(paciente) {
 
 export async function deletePaciente(id) {
   const database = await getDB();
+  const ahora = new Date().toISOString();
   await database.runAsync(
-    `UPDATE pacientes SET eliminado = 1, sincronizado = 0 WHERE id = ?`,
+    `UPDATE consultas SET eliminado = 1, sincronizado = 0 WHERE paciente_id = ?`,
     [id]
+  );
+  await database.runAsync(
+    `UPDATE ventas SET eliminado = 1, sincronizado = 0 WHERE paciente_id = ?`,
+    [id]
+  );
+  await database.runAsync(
+    `UPDATE pacientes SET eliminado = 1, sincronizado = 0, fecha_actualizacion = ? WHERE id = ?`,
+    [ahora, id]
   );
 }
 

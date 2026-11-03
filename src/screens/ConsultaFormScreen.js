@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { insertConsulta } from '../services/database';
 import { getTrialStatus } from '../services/trial';
+import { hoyTexto, parseFechaReal } from '../utils/fechas';
 
 const PRIMARY = '#0A4D8C';
 
@@ -51,6 +52,7 @@ export default function ConsultaFormScreen({ route, navigation }) {
   const [avOi, setAvOi] = useState('');
   const [tipoLente, setTipoLente] = useState('');
   const [observaciones, setObservaciones] = useState('');
+  const [fechaReal, setFechaReal] = useState(hoyTexto());
 
   function parseNum(val) {
   if (val === '' || val === null || val === undefined) return null;
@@ -75,13 +77,19 @@ const tipos = ['Monofocal', 'Bifocal', 'Progresivo', 'Ocupacional', 'Lentes de c
       return;
     }
 
+    const fecha = parseFechaReal(fechaReal);
+    if (!fecha) {
+      Alert.alert('Error', 'Escribe la fecha real de la consulta como dd/mm/aaaa');
+      return;
+    }
+
     setSaving(true);
     try {
       const ahora = new Date().toISOString();
       await insertConsulta({
         id: generateId(),
         paciente_id: pacienteId,
-        fecha: ahora,
+        fecha,
         od_esfera: parseNum(odEsfera),
         od_cilindro: parseNum(odCilindro),
         od_eje: parseIntSafe(odEje),
@@ -108,6 +116,16 @@ const tipos = ['Monofocal', 'Bifocal', 'Progresivo', 'Ocupacional', 'Lentes de c
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.label}>Fecha real de la consulta</Text>
+        <TextInput
+          style={styles.input}
+          value={fechaReal}
+          onChangeText={setFechaReal}
+          placeholder="dd/mm/aaaa"
+          keyboardType="numbers-and-punctuation"
+        />
+        <Text style={styles.hint}>Día en que atendiste al paciente. La fecha de captura se guarda sola.</Text>
+
         {/* OD */}
         <View style={[styles.bloque, { backgroundColor: '#E3F2FD' }]}>
           <Text style={[styles.bloqueTitulo, { color: PRIMARY }]}>OJO DERECHO (OD)</Text>
@@ -186,6 +204,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   label: { fontSize: 14, color: '#555', marginBottom: 8, marginTop: 8 },
+  hint: { fontSize: 12, color: '#777', marginTop: -4, marginBottom: 8 },
   tipos: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
   chip: {
     paddingHorizontal: 12,

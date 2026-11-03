@@ -39,22 +39,33 @@ export default function HomeScreen({ navigation }) {
     }, [cargar])
   );
 
+  const abrir = (item, vista) => navigation.navigate('PacienteDetail', { pacienteId: item.id, vista });
+
   const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => navigation.navigate('PacienteDetail', { pacienteId: item.id })}
-    >
-      <View style={styles.avatar}>
-        <Text style={styles.avatarText}>{item.nombre?.[0]?.toUpperCase() || '?'}</Text>
-      </View>
-      <View style={styles.info}>
-        <Text style={styles.nombre}>{item.nombre}</Text>
-        <Text style={styles.sub}>
-          {[item.edad ? `${item.edad} años` : null, item.telefono].filter(Boolean).join(' · ')}
-        </Text>
-      </View>
-      <Text style={styles.chevron}>›</Text>
-    </TouchableOpacity>
+    <View style={styles.card}>
+      <TouchableOpacity style={styles.cardMain} onPress={() => abrir(item, 'consultas')}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>{item.nombre?.[0]?.toUpperCase() || '?'}</Text>
+        </View>
+        <View style={styles.info}>
+          <Text style={styles.nombre}>{item.nombre}</Text>
+          <Text style={styles.sub}>
+            {[item.edad ? `${item.edad} años` : null, item.telefono].filter(Boolean).join(' · ')}
+          </Text>
+        </View>
+        {!busqueda.trim() && <Text style={styles.chevron}>›</Text>}
+      </TouchableOpacity>
+      {!!busqueda.trim() && (
+        <View style={styles.choices}>
+          <TouchableOpacity style={styles.choice} onPress={() => abrir(item, 'consultas')}>
+            <Text style={styles.choiceText}>Consultas</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.choice, styles.choiceAlt]} onPress={() => abrir(item, 'ventas')}>
+            <Text style={[styles.choiceText, styles.choiceTextAlt]}>Ventas</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
   );
 
   return (
@@ -143,8 +154,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#fff',
     marginHorizontal: 16,
     marginVertical: 6,
@@ -152,6 +161,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     elevation: 1,
   },
+  cardMain: { flexDirection: 'row', alignItems: 'center' },
+  choices: { flexDirection: 'row', gap: 8, marginTop: 12 },
+  choice: { flex: 1, backgroundColor: PRIMARY, borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
+  choiceAlt: { backgroundColor: '#fff', borderWidth: 1, borderColor: PRIMARY },
+  choiceText: { color: '#fff', fontWeight: '700' },
+  choiceTextAlt: { color: PRIMARY },
   avatar: {
     width: 44,
     height: 44,

@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { format } from 'date-fns';
-import { getPacienteById, getConsultasByPaciente, getVentasByPaciente } from '../services/database';
+import { getPacienteById, getConsultasByPaciente, getVentasByPaciente, deletePaciente } from '../services/database';
+import { formatFecha } from '../utils/fechas';
 
 const PRIMARY = '#0A4D8C';
 
@@ -14,6 +14,7 @@ export default function PacienteDetailScreen({ route, navigation }) {
   const [consultas, setConsultas] = useState([]);
   const [ventas, setVentas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [vista, setVista] = useState(route.params?.vista === 'ventas' ? 'ventas' : 'consultas');
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -32,7 +33,50 @@ export default function PacienteDetailScreen({ route, navigation }) {
     }
   }, [pacienteId]);
 
-  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
+  useFocusEffect(useCallback(() => {
+    setVista(route.params?.vista === 'ventas' ? 'ventas' : 'consultas');
+    cargar();
+  }, [cargar, route.params?.vista]));
+
+  const borrar = () => {
+    Alert.alert(
+      'Borrar paciente',
+      `Se ocultará a ${paciente.nombre} y su historial. Esta acción no se puede deshacer desde la app.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Borrar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deletePaciente(paciente.id);
+              navigation.goBack();
+            } catch (e) {
+              Alert.alert('Error', e.message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const fmtDioptria = (n) => {
+    if (n == null || n === '') return '—';
+    const num = Number(n);
+    if (!Number.isFinite(num)) return '—';
+    if (num > 0) return `+${num.toFixed(2)}`;
+    if (num < 0) return num.toFixed(2);
+    return '0.00';
+  };
+
+  const fmtEje = (n) => {
+    if (n == null || n === '') return '—';
+    const num = Number(n);
+    return Number.isFinite(num) ? String(Math.round(num)) : '—';
+  };
+
+  const lineaOjo = (lado, c, prefix) =>
+    `${lado}  Esfera ${fmtDioptria(c[`${prefix}_esfera`])}   Cilindro ${fmtDioptria(c[`${prefix}_cilindro`])}   Eje ${fmtEje(c[`${prefix}_eje`])}   Adición ${fmtDioptria(c[`${prefix}_adicion`])}`;
 
   if (loading) {
     return <ActivityIndicator size="large" color={PRIMARY} style={{ marginTop: 60 }} />;
@@ -41,13 +85,6 @@ export default function PacienteDetailScreen({ route, navigation }) {
   if (!paciente) {
     return <View style={styles.center}><Text>Paciente no encontrado</Text></View>;
   }
-
-  const resumenGrad = (c) => {
-    const parts = [];
-    if (c.od_esfera != null) parts.push(`OD ${c.od_esfera >= 0 ? '+' : ''}${c.od_esfera}`);
-    if (c.oi_esfera != null) parts.push(`OI ${c.oi_esfera >= 0 ? '+' : ''}${c.oi_esfera}`);
-    return parts.join('  |  ') || 'Sin graduación';
-  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 16 }}>
@@ -81,32 +118,59 @@ export default function PacienteDetailScreen({ route, navigation }) {
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={{ marginBottom: 12 }}
+        style={{ marginBottom: 8 }}
         onPress={() => navigation.navigate('PacienteForm', { paciente })}
       >
         <Text style={{ color: PRIMARY, textAlign: 'center' }}>Editar datos del paciente</Text>
       </TouchableOpacity>
+      <TouchableOpacity style={{ marginBottom: 16 }} onPress={borrar}>
+        <Text style={{ color: '#B00020', textAlign: 'center', fontWeight: '600' }}>Borrar paciente</Text>
+      </TouchableOpacity>
 
-      <Text style={styles.section}>Historial</Text>
+      <View style={styles.switchRow}>
+        <TouchableOpacity
+          style={[styles.switchBtn, vista === 'consultas' && styles.switchBtnOn]}
+          onPress={() => setVista('consultas')}
+        >
+          <Text style={[styles.switchText, vista === 'consultas' && styles.switchTextOn]}>Consultas</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.switchBtn, vista === 'ventas' && styles.switchBtnOn]}
+          onPress={() => setVista('ventas')}
+        >
+          <Text style={[styles.switchText, vista === 'ventas' && styles.switchTextOn]}>Ventas</Text>
+        </TouchableOpacity>
+      </View>
 
-      {consultas.length === 0 && ventas.length === 0 && (
-        <Text style={styles.empty}>Sin historial aún</Text>
+      {vista === 'consultas' && consultas.length === 0 && (
+        <Text style={styles.empty}>Sin consultas</Text>
+      )}
+      {vista === 'ventas' && ventas.length === 0 && (
+        <Text style={styles.empty}>Sin ventas</Text>
       )}
 
-      {consultas.map((c) => (
+      {vista === 'consultas' && consultas.map((c) => (
         <View key={c.id} style={styles.item}>
-          <Text style={styles.itemTitle}>👁️ Consulta · {format(new Date(c.fecha), 'dd/MM/yyyy')}</Text>
-          <Text style={styles.itemSub}>{resumenGrad(c)}</Text>
-          {c.tipo_lente && <Text style={styles.itemSub}>{c.tipo_lente}</Text>}
+          <Text style={styles.itemTitle}>Consulta · {formatFecha(c.fecha)}</Text>
+          <Text style={styles.captura}>Capturada el {formatFecha(c.fecha_creacion)}</Text>
+          <Text style={styles.itemSub}>{lineaOjo('OD', c, 'od')}</Text>
+          <Text style={styles.itemSub}>{lineaOjo('OI', c, 'oi')}</Text>
+          <Text style={styles.itemSub}>DP {c.dp != null ? c.dp : '—'}   AV OD {c.av_od || '—'}   AV OI {c.av_oi || '—'}</Text>
+          {c.tipo_lente ? <Text style={styles.itemSub}>Tipo de lente: {c.tipo_lente}</Text> : null}
+          {c.observaciones ? <Text style={styles.itemSub}>Observaciones: {c.observaciones}</Text> : null}
         </View>
       ))}
 
-      {ventas.map((v) => (
+      {vista === 'ventas' && ventas.map((v) => (
         <View key={v.id} style={styles.item}>
-          <Text style={styles.itemTitle}>🛍️ {v.producto}</Text>
-          <Text style={styles.itemSub}>
-            {format(new Date(v.fecha_venta), 'dd/MM/yyyy')} · ${Number(v.costo).toFixed(2)} · {v.estado}
-          </Text>
+          <Text style={styles.itemTitle}>Venta · {v.producto}</Text>
+          <Text style={styles.realDate}>Fecha real {formatFecha(v.fecha_venta)}</Text>
+          <Text style={styles.captura}>Capturada el {formatFecha(v.fecha_creacion)}</Text>
+          {v.marca ? <Text style={styles.itemSub}>Marca: {v.marca}</Text> : null}
+          {v.material ? <Text style={styles.itemSub}>Material: {v.material}</Text> : null}
+          {v.tratamientos ? <Text style={styles.itemSub}>Tratamientos: {v.tratamientos}</Text> : null}
+          <Text style={styles.itemSub}>Costo ${Number(v.costo).toFixed(2)} · {v.estado}</Text>
+          {v.notas ? <Text style={styles.itemSub}>Notas: {v.notas}</Text> : null}
         </View>
       ))}
     </ScrollView>
@@ -125,6 +189,13 @@ const styles = StyleSheet.create({
   section: { fontSize: 17, fontWeight: '700', marginBottom: 10, color: '#222' },
   empty: { textAlign: 'center', color: '#999', marginVertical: 30 },
   item: { backgroundColor: '#fff', borderRadius: 10, padding: 14, marginBottom: 8 },
-  itemTitle: { fontWeight: '600', fontSize: 15, color: '#222' },
-  itemSub: { color: '#666', marginTop: 4, fontSize: 13 },
+  itemTitle: { fontWeight: '700', fontSize: 16, color: '#222' },
+  realDate: { color: PRIMARY, marginTop: 4, fontSize: 14, fontWeight: '600' },
+  captura: { color: '#888', marginTop: 2, fontSize: 12 },
+  itemSub: { color: '#333', marginTop: 6, fontSize: 14, lineHeight: 20 },
+  switchRow: { flexDirection: 'row', backgroundColor: '#e6e6e6', borderRadius: 12, padding: 4, marginBottom: 12 },
+  switchBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
+  switchBtnOn: { backgroundColor: PRIMARY },
+  switchText: { color: '#444', fontWeight: '600' },
+  switchTextOn: { color: '#fff' },
 });

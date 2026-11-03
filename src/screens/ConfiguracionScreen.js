@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { format } from 'date-fns';
@@ -20,7 +20,22 @@ export default function ConfiguracionScreen() {
 
       await FileSystem.writeAsStringAsync(path, json, { encoding: FileSystem.EncodingType.UTF8 });
 
-      // Ofrecer guardar / compartir
+      if (Platform.OS === 'android' && FileSystem.StorageAccessFramework) {
+        const perm = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+        if (!perm.granted) {
+          Alert.alert('No se guardó', 'Elige la carpeta Descargas para guardar el respaldo en el teléfono.');
+          return;
+        }
+        const destino = await FileSystem.StorageAccessFramework.createFileAsync(
+          perm.directoryUri,
+          `OptiHistorial_${fecha}.json`,
+          'application/json'
+        );
+        await FileSystem.writeAsStringAsync(destino, json, { encoding: FileSystem.EncodingType.UTF8 });
+        Alert.alert('Respaldo guardado', 'El archivo quedó en la carpeta que elegiste.');
+        return;
+      }
+
       if (await Sharing.isAvailableAsync()) {
         Alert.alert(
           'Respaldo listo',
@@ -54,7 +69,7 @@ export default function ConfiguracionScreen() {
         <Text style={styles.icon}>💾</Text>
         <View style={{ flex: 1 }}>
           <Text style={styles.title}>Respaldo local</Text>
-          <Text style={styles.sub}>Genera un archivo y lo guarda donde quieras</Text>
+          <Text style={styles.sub}>Lo guarda en Descargas u otra carpeta del teléfono</Text>
         </View>
         {exportando ? <ActivityIndicator color={PRIMARY} /> : <Text style={styles.chevron}>›</Text>}
       </TouchableOpacity>

@@ -3,8 +3,8 @@ import {
   View, Text, ScrollView, StyleSheet, ActivityIndicator, Dimensions
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { format } from 'date-fns';
 import { getConsultasByPaciente } from '../services/database';
+import { formatFecha } from '../utils/fechas';
 
 const PRIMARY = '#0A4D8C';
 const { width } = Dimensions.get('window');
@@ -21,7 +21,7 @@ export default function EvolucionScreen({ route }) {
     try {
       const data = await getConsultasByPaciente(pacienteId);
       // Ordenar por fecha descendente (más reciente primero)
-      const sorted = [...data].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+      const sorted = [...data].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
       setConsultas(sorted);
     } catch (e) {
       console.error(e);
@@ -61,7 +61,7 @@ export default function EvolucionScreen({ route }) {
       {consultas.map((c) => (
         <View key={c.id} style={styles.card}>
           <Text style={styles.fecha}>
-            {c.fecha ? format(new Date(c.fecha), 'dd/MM/yyyy') : 'Sin fecha'}
+            Consulta · {formatFecha(c.fecha)}
           </Text>
 
           <View style={styles.tableHeader}>

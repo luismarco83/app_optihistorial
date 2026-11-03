@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { format } from 'date-fns';
 import { getAllVentas } from '../services/database';
+import { formatFecha } from '../utils/fechas';
 
 const PRIMARY = '#0A4D8C';
 
@@ -45,10 +45,11 @@ export default function VentasScreen() {
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.producto}>{item.producto}</Text>
+              <Text style={styles.producto}>Venta · {item.producto}</Text>
               <Text style={styles.sub}>
-                {format(new Date(item.fecha_venta), 'dd/MM/yyyy')} · {item.estado}
+                Fecha real {formatFecha(item.fecha_venta)} · {item.estado}
               </Text>
+              <Text style={styles.captura}>Capturada el {formatFecha(item.fecha_creacion)}</Text>
             </View>
             <Text style={styles.costo}>${Number(item.costo).toFixed(2)}</Text>
           </View>
@@ -74,5 +75,6 @@ const styles = StyleSheet.create({
   },
   producto: { fontWeight: '600', fontSize: 15, color: '#222' },
   sub: { color: '#777', marginTop: 3, fontSize: 13 },
+  captura: { color: '#999', marginTop: 2, fontSize: 12 },
   costo: { fontWeight: '700', color: PRIMARY, fontSize: 16 },
 });
