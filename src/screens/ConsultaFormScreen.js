@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform
@@ -6,6 +6,7 @@ import {
 import { insertConsulta } from '../services/database';
 import { getTrialStatus } from '../services/trial';
 import { hoyTexto, parseFechaReal } from '../utils/fechas';
+import { AuthContext } from '../services/session';
 
 const PRIMARY = '#0A4D8C';
 
@@ -36,6 +37,7 @@ function Campo({ label, value, onChange, placeholder }) {
 export default function ConsultaFormScreen({ route, navigation }) {
   const { pacienteId } = route.params;
   const [saving, setSaving] = useState(false);
+  const { registrar } = useContext(AuthContext);
 
   const [odEsfera, setOdEsfera] = useState('');
   const [odCilindro, setOdCilindro] = useState('');
@@ -105,6 +107,7 @@ const tipos = ['Monofocal', 'Bifocal', 'Progresivo', 'Ocupacional', 'Lentes de c
         observaciones: observaciones.trim() || null,
         fecha_creacion: ahora,
       });
+      await registrar('Registró una consulta', fecha);
       navigation.goBack();
     } catch (e) {
       Alert.alert('Error', e.message);

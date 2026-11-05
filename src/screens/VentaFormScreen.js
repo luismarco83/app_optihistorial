@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform
@@ -6,6 +6,7 @@ import {
 import { insertVenta } from '../services/database';
 import { getTrialStatus } from '../services/trial';
 import { hoyTexto, parseFechaReal } from '../utils/fechas';
+import { AuthContext } from '../services/session';
 
 const PRIMARY = '#0A4D8C';
 
@@ -20,6 +21,7 @@ function generateId() {
 export default function VentaFormScreen({ route, navigation }) {
   const { pacienteId } = route.params;
   const [saving, setSaving] = useState(false);
+  const { registrar } = useContext(AuthContext);
 
   const [producto, setProducto] = useState('');
   const [marca, setMarca] = useState('');
@@ -72,6 +74,7 @@ export default function VentaFormScreen({ route, navigation }) {
         notas: notas.trim() || null,
         fecha_creacion: ahora,
       });
+      await registrar('Registró una venta', `${producto.trim()} · ${fecha}`);
       navigation.goBack();
     } catch (e) {
       Alert.alert('Error', e.message);

@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { format } from 'date-fns';
 import { exportAllData } from '../services/database';
+import { AuthContext } from '../services/session';
 
 const PRIMARY = '#0A4D8C';
 
-export default function ConfiguracionScreen() {
+export default function ConfiguracionScreen({ navigation }) {
   const [exportando, setExportando] = useState(false);
+  const { esAdmin, registrar, salir, usuario } = useContext(AuthContext);
 
   const exportarRespaldo = async () => {
     setExportando(true);
@@ -32,6 +34,7 @@ export default function ConfiguracionScreen() {
           'application/json'
         );
         await FileSystem.writeAsStringAsync(destino, json, { encoding: FileSystem.EncodingType.UTF8 });
+        await registrar('Guardó un respaldo', `OptiHistorial_${fecha}.json`);
         Alert.alert('Respaldo guardado', 'El archivo quedó en la carpeta que elegiste.');
         return;
       }
@@ -72,6 +75,45 @@ export default function ConfiguracionScreen() {
           <Text style={styles.sub}>Lo guarda en Descargas u otra carpeta del teléfono</Text>
         </View>
         {exportando ? <ActivityIndicator color={PRIMARY} /> : <Text style={styles.chevron}>›</Text>}
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('ImprimirPacientes')}>
+        <Text style={styles.icon}>🖨️</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>Imprimir pacientes</Text>
+          <Text style={styles.sub}>Elige datos, consultas o ventas, e imprime o exporta a PDF</Text>
+        </View>
+        <Text style={styles.chevron}>›</Text>
+      </TouchableOpacity>
+
+      {esAdmin && (
+        <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('Usuarios')}>
+          <Text style={styles.icon}>👤</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Usuarios</Text>
+            <Text style={styles.sub}>Agrega quién puede entrar y si es administrador</Text>
+          </View>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+      )}
+
+      {esAdmin && (
+        <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('Auditoria')}>
+          <Text style={styles.icon}>📒</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>Historial de acceso</Text>
+            <Text style={styles.sub}>Quién entró y qué hizo. Solo el administrador lo borra o modifica</Text>
+          </View>
+          <Text style={styles.chevron}>›</Text>
+        </TouchableOpacity>
+      )}
+
+      <TouchableOpacity style={styles.item} onPress={() => salir()}>
+        <Text style={styles.icon}>🔒</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.title}>Cerrar sesión</Text>
+          <Text style={styles.sub}>Entraste como {usuario?.nombre}</Text>
+        </View>
       </TouchableOpacity>
 
       <View style={[styles.item, { opacity: 0.5 }]}>

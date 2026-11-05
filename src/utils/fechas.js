@@ -26,3 +26,20 @@ export function formatFecha(value) {
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   return `${dd}/${mm}/${d.getFullYear()}`;
 }
+
+export function partesFecha(value) {
+  const iso = String(value || '').match(/^(\d{4})-(\d{2})/);
+  if (iso) return { anio: Number(iso[1]), mes: Number(iso[2]) };
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return { anio: d.getFullYear(), mes: d.getMonth() + 1 };
+}
+
+export const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+export function etiquetaMes(anio, mes) {
+  return `${MESES[mes - 1]} ${anio}`;
+}

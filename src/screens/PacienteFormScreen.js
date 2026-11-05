@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform
 } from 'react-native';
 import { insertPaciente, updatePaciente } from '../services/database';
 import { getTrialStatus } from '../services/trial';
+import { AuthContext } from '../services/session';
 
 const PRIMARY = '#0A4D8C';
 
@@ -26,6 +27,7 @@ export default function PacienteFormScreen({ route, navigation }) {
   const [edad, setEdad] = useState(paciente?.edad?.toString() || '');
   const [notas, setNotas] = useState(paciente?.notas || '');
   const [saving, setSaving] = useState(false);
+  const { registrar } = useContext(AuthContext);
 
   const guardar = async () => {
     if (!nombre.trim()) {
@@ -57,6 +59,7 @@ export default function PacienteFormScreen({ route, navigation }) {
           edad: parseInt(edad) || null,
           notas: notas.trim() || null,
         });
+        await registrar('Editó un paciente', nombre.trim());
       } else {
         await insertPaciente({
           id: generateId(),
@@ -68,6 +71,7 @@ export default function PacienteFormScreen({ route, navigation }) {
           fecha_creacion: ahora,
           fecha_actualizacion: ahora,
         });
+        await registrar('Creó un paciente', nombre.trim());
       }
       navigation.goBack();
     } catch (e) {

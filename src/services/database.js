@@ -69,6 +69,25 @@ async function initTables() {
     CREATE INDEX IF NOT EXISTS idx_pacientes_nombre ON pacientes(nombre);
     CREATE INDEX IF NOT EXISTS idx_consultas_paciente ON consultas(paciente_id);
     CREATE INDEX IF NOT EXISTS idx_ventas_paciente ON ventas(paciente_id);
+
+    CREATE TABLE IF NOT EXISTS usuarios (
+      id TEXT PRIMARY KEY NOT NULL,
+      nombre TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      salt TEXT NOT NULL,
+      rol TEXT NOT NULL,
+      fecha_creacion TEXT NOT NULL,
+      eliminado INTEGER DEFAULT 0
+    );
+
+    CREATE TABLE IF NOT EXISTS auditoria (
+      id TEXT PRIMARY KEY NOT NULL,
+      fecha TEXT NOT NULL,
+      usuario_id TEXT,
+      usuario_nombre TEXT NOT NULL,
+      accion TEXT NOT NULL,
+      detalle TEXT
+    );
   `);
 }
 
@@ -217,7 +236,11 @@ export async function getVentasByPaciente(pacienteId) {
 export async function getAllVentas() {
   const database = await getDB();
   return await database.getAllAsync(
-    `SELECT * FROM ventas WHERE eliminado = 0 ORDER BY fecha_venta DESC`
+    `SELECT v.*, p.nombre AS paciente_nombre
+     FROM ventas v
+     LEFT JOIN pacientes p ON p.id = v.paciente_id
+     WHERE v.eliminado = 0
+     ORDER BY v.fecha_venta DESC`
   );
 }
 

@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useContext } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, Alert
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { getPacienteById, getConsultasByPaciente, getVentasByPaciente, deletePaciente } from '../services/database';
 import { formatFecha } from '../utils/fechas';
+import { AuthContext } from '../services/session';
 
 const PRIMARY = '#0A4D8C';
 
@@ -15,6 +16,7 @@ export default function PacienteDetailScreen({ route, navigation }) {
   const [ventas, setVentas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [vista, setVista] = useState(route.params?.vista === 'ventas' ? 'ventas' : 'consultas');
+  const { registrar } = useContext(AuthContext);
 
   const cargar = useCallback(async () => {
     setLoading(true);
@@ -50,6 +52,7 @@ export default function PacienteDetailScreen({ route, navigation }) {
           onPress: async () => {
             try {
               await deletePaciente(paciente.id);
+              await registrar('Borró un paciente', paciente.nombre);
               navigation.goBack();
             } catch (e) {
               Alert.alert('Error', e.message);
@@ -118,13 +121,19 @@ export default function PacienteDetailScreen({ route, navigation }) {
       </TouchableOpacity>
 
       <TouchableOpacity
+        style={[styles.btn, { flex: 0, backgroundColor: '#fff', borderWidth: 1, borderColor: PRIMARY, marginBottom: 8 }]}
+        onPress={() => navigation.navigate('ImprimirPacientes', { pacienteId })}
+      >
+        <Text style={[styles.btnText, { color: PRIMARY }]}>Imprimir o exportar PDF</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
         style={{ marginBottom: 8 }}
         onPress={() => navigation.navigate('PacienteForm', { paciente })}
       >
         <Text style={{ color: PRIMARY, textAlign: 'center' }}>Editar datos del paciente</Text>
       </TouchableOpacity>
-      <TouchableOpacity style={{ marginBottom: 16 }} onPress={borrar}>
-        <Text style={{ color: '#B00020', textAlign: 'center', fontWeight: '600' }}>Borrar paciente</Text>
+      <TouchableOpacity style={styles.borrar} onPress={borrar}>
+        <Text style={styles.borrarText}>Borrar paciente</Text>
       </TouchableOpacity>
 
       <View style={styles.switchRow}>
@@ -198,4 +207,6 @@ const styles = StyleSheet.create({
   switchBtnOn: { backgroundColor: PRIMARY },
   switchText: { color: '#444', fontWeight: '600' },
   switchTextOn: { color: '#fff' },
+  borrar: { borderWidth: 1, borderColor: '#B00020', borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginBottom: 16 },
+  borrarText: { color: '#B00020', fontWeight: '700' },
 });
