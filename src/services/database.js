@@ -89,6 +89,19 @@ async function initTables() {
       detalle TEXT
     );
   `);
+  await asegurarColumnas();
+}
+
+async function asegurarColumnas() {
+  const usuarios = await db.getAllAsync(`PRAGMA table_info(usuarios)`);
+  if (!usuarios.some((c) => c.name === 'recuperacion_hash')) {
+    await db.execAsync(`ALTER TABLE usuarios ADD COLUMN recuperacion_hash TEXT`);
+    await db.execAsync(`ALTER TABLE usuarios ADD COLUMN recuperacion_salt TEXT`);
+  }
+  const consultas = await db.getAllAsync(`PRAGMA table_info(consultas)`);
+  if (!consultas.some((c) => c.name === 'proxima_consulta')) {
+    await db.execAsync(`ALTER TABLE consultas ADD COLUMN proxima_consulta TEXT`);
+  }
 }
 
 // ========== PACIENTES ==========
@@ -196,8 +209,8 @@ export async function insertConsulta(consulta) {
     `INSERT INTO consultas (
       id, paciente_id, fecha, od_esfera, od_cilindro, od_eje, od_adicion,
       oi_esfera, oi_cilindro, oi_eje, oi_adicion, dp, av_od, av_oi,
-      tipo_lente, observaciones, foto_receta_path, fecha_creacion, sincronizado, eliminado
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      tipo_lente, observaciones, foto_receta_path, proxima_consulta, fecha_creacion, sincronizado, eliminado
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       consulta.id,
       consulta.paciente_id,
@@ -216,6 +229,7 @@ export async function insertConsulta(consulta) {
       consulta.tipo_lente || null,
       consulta.observaciones || null,
       consulta.foto_receta_path || null,
+      consulta.proxima_consulta || null,
       consulta.fecha_creacion,
       0,
       0,
@@ -308,4 +322,52 @@ export async function exportAllData() {
     consultas,
     ventas,
   };
+}
+
+export async function getProximasConsultas() {
+  const database = await getDB();
+  return database.getAllAsync(
+    `SELECT c.id, c.paciente_id, c.proxima_consulta, c.fecha, p.nombre AS paciente_nombre
+     FROM consultas c
+     JOIN pacientes p ON p.id = c.paciente_id
+     WHERE c.eliminado = 0 AND p.eliminado = 0 AND c.proxima_consulta IS NOT NULL
+     ORDER BY c.proxima_consulta ASC`
+  );
+}
+
+export async function importarRespaldo(data) {
+  if (!data || data.version !== 1 || !Array.isArray(data.pacientes) || !Array.isArray(data.consultas) || !Array.isArray(data.ventas)) {
+    throw new Error('Este archivo no es un respaldo de OptiHistorial.');
+  }
+  const database = await getDB();
+  await database.withTransactionAsync(async () => {
+    await database.execAsync(`DELETE FROM consultas; DELETE FROM ventas; DELETE FROM pacientes;`);
+    for (const p of data.pacientes) {
+      await database.runAsync(
+        `INSERT INTO pacientes (id, nombre, telefono, email, edad, notas, fecha_creacion, fecha_actualizacion, sincronizado, eliminado)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [p.id, p.nombre, p.telefono || null, p.email || null, p.edad || null, p.notas || null, p.fecha_creacion, p.fecha_actualizacion || p.fecha_creacion, p.sincronizado || 0, p.eliminado || 0]
+      );
+    }
+    for (const c of data.consultas) {
+      await database.runAsync(
+        `INSERT INTO consultas (
+          id, paciente_id, fecha, od_esfera, od_cilindro, od_eje, od_adicion,
+          oi_esfera, oi_cilindro, oi_eje, oi_adicion, dp, av_od, av_oi,
+          tipo_lente, observaciones, foto_receta_path, proxima_consulta, fecha_creacion, sincronizado, eliminado
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [c.id, c.paciente_id, c.fecha, c.od_esfera ?? null, c.od_cilindro ?? null, c.od_eje ?? null, c.od_adicion ?? null, c.oi_esfera ?? null, c.oi_cilindro ?? null, c.oi_eje ?? null, c.oi_adicion ?? null, c.dp ?? null, c.av_od || null, c.av_oi || null, c.tipo_lente || null, c.observaciones || null, c.foto_receta_path || null, c.proxima_consulta || null, c.fecha_creacion, c.sincronizado || 0, c.eliminado || 0]
+      );
+    }
+    for (const v of data.ventas) {
+      await database.runAsync(
+        `INSERT INTO ventas (
+          id, paciente_id, consulta_id, fecha_venta, producto, marca, material,
+          tratamientos, costo, estado, notas, fecha_creacion, sincronizado, eliminado
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [v.id, v.paciente_id, v.consulta_id || null, v.fecha_venta, v.producto, v.marca || null, v.material || null, v.tratamientos || null, v.costo, v.estado, v.notas || null, v.fecha_creacion, v.sincronizado || 0, v.eliminado || 0]
+      );
+    }
+  });
+  return { pacientes: data.pacientes.length, consultas: data.consultas.length, ventas: data.ventas.length };
 }

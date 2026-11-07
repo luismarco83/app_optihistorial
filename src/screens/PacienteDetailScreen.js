@@ -162,6 +162,7 @@ export default function PacienteDetailScreen({ route, navigation }) {
         <View key={c.id} style={styles.item}>
           <Text style={styles.itemTitle}>Consulta · {formatFecha(c.fecha)}</Text>
           <Text style={styles.captura}>Capturada el {formatFecha(c.fecha_creacion)}</Text>
+          {c.proxima_consulta ? <Text style={styles.itemSub}>Próxima consulta: {formatFecha(c.proxima_consulta)}</Text> : null}
           <Text style={styles.itemSub}>{lineaOjo('OD', c, 'od')}</Text>
           <Text style={styles.itemSub}>{lineaOjo('OI', c, 'oi')}</Text>
           <Text style={styles.itemSub}>DP {c.dp != null ? c.dp : '—'}   AV OD {c.av_od || '—'}   AV OI {c.av_oi || '—'}</Text>

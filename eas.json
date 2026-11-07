@@ -10,7 +10,18 @@
         "image": "sdk-52"
       },
       "distribution": "internal",
-      "node": "20.18.0"
+      "node": "20.18.0",
+      "env": {
+        "APP_VARIANT": "cliente",
+        "EXPO_PUBLIC_ES_VENDEDOR": "0"
+      }
+    },
+    "vendedor": {
+      "extends": "preview",
+      "env": {
+        "APP_VARIANT": "vendedor",
+        "EXPO_PUBLIC_ES_VENDEDOR": "1"
+      }
     },
     "production": {
       "android": {

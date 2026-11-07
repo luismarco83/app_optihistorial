@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { differenceInDays, addDays, format } from 'date-fns';
+import { leerLicencia } from './licencia';
 
 const TRIAL_DAYS = 30;
 const WARNING_DAYS = 7; // días antes de mostrar aviso
@@ -36,6 +37,19 @@ export async function getTrialStatus() {
   const daysRemaining = Math.max(0, TRIAL_DAYS - daysUsed);
   const isExpired = daysUsed >= TRIAL_DAYS;
   const showWarning = !isExpired && daysRemaining <= WARNING_DAYS;
+  const licencia = await leerLicencia();
+  if (licencia.vigente) {
+    return {
+      daysUsed,
+      daysRemaining,
+      isExpired: false,
+      showWarning: false,
+      expireDate,
+      installDate,
+      licensed: true,
+      licenciaHasta: licencia.hasta,
+    };
+  }
 
   return {
     daysUsed,
@@ -54,7 +68,7 @@ export function getTrialMessage(status) {
   if (status.isExpired) {
     return {
       title: 'Periodo de prueba finalizado',
-      body: `Tu periodo de prueba de ${TRIAL_DAYS} días ha terminado.\n\nPuedes seguir consultando todos los datos ya guardados, pero no es posible crear nuevos pacientes, consultas ni ventas.\n\nContacta al desarrollador para continuar con el uso completo.`,
+      body: `Tu periodo de prueba de ${TRIAL_DAYS} días ha terminado.\n\nPuedes seguir consultando lo guardado, pero no capturar nada nuevo.\n\nEn Configuración escribe el código de activación.`,
     };
   }
 

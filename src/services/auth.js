@@ -55,6 +55,57 @@ export async function crearUsuario({ nombre, password, rol }) {
   return usuario;
 }
 
+function nuevaClave() {
+  const alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let texto = '';
+  for (let i = 0; i < 8; i += 1) {
+    texto += alfabeto[Math.floor(Math.random() * alfabeto.length)];
+  }
+  return `${texto.slice(0, 4)}-${texto.slice(4)}`;
+}
+
+export async function guardarClaveRecuperacion(usuarioId) {
+  const clave = nuevaClave();
+  const salt = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  const hash = await hashPassword(clave, salt);
+  const database = await getDB();
+  await database.runAsync(
+    `UPDATE usuarios SET recuperacion_hash = ?, recuperacion_salt = ? WHERE id = ?`,
+    [hash, salt, usuarioId]
+  );
+  return clave;
+}
+
+export async function tieneClaveRecuperacion(usuarioId) {
+  const database = await getDB();
+  const row = await database.getFirstAsync(
+    `SELECT recuperacion_hash FROM usuarios WHERE id = ?`,
+    [usuarioId]
+  );
+  return !!row?.recuperacion_hash;
+}
+
+export async function restablecerConClave(clave, nuevaPassword) {
+  const database = await getDB();
+  const admins = await database.getAllAsync(
+    `SELECT id, recuperacion_hash, recuperacion_salt FROM usuarios WHERE rol = 'admin' AND eliminado = 0 AND recuperacion_hash IS NOT NULL`
+  );
+  const escrita = String(clave || '').trim().toUpperCase();
+  for (const admin of admins) {
+    const hash = await hashPassword(escrita, admin.recuperacion_salt);
+    if (hash === admin.recuperacion_hash) {
+      const salt = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+      const passwordHash = await hashPassword(nuevaPassword, salt);
+      await database.runAsync(
+        `UPDATE usuarios SET password_hash = ?, salt = ? WHERE id = ?`,
+        [passwordHash, salt, admin.id]
+      );
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function ingresar(nombre, password) {
   const database = await getDB();
   const row = await database.getFirstAsync(

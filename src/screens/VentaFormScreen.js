@@ -37,7 +37,7 @@ export default function VentaFormScreen({ route, navigation }) {
     if (trial.isExpired) {
       Alert.alert(
         'Periodo de prueba finalizado',
-        'No es posible crear nuevas ventas. Puedes seguir consultando los datos existentes.\n\nContacta al desarrollador para continuar.'
+        'En Configuración escribe el código de activación para seguir capturando.'
       );
       return;
     }

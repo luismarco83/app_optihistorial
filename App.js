@@ -16,9 +16,10 @@ import EvolucionScreen from './src/screens/EvolucionScreen';
 import UsuariosScreen from './src/screens/UsuariosScreen';
 import AuditoriaScreen from './src/screens/AuditoriaScreen';
 import ImprimirPacientesScreen from './src/screens/ImprimirPacientesScreen';
-import { LoginScreen, SetupAdminScreen } from './src/screens/AccesoScreen';
+import { LoginScreen, SetupAdminScreen, AnotarClaveScreen } from './src/screens/AccesoScreen';
+import GeneradorLicenciaScreen from './src/screens/GeneradorLicenciaScreen';
 import { AuthContext } from './src/services/session';
-import { hayAdministrador } from './src/services/auth';
+import { hayAdministrador, tieneClaveRecuperacion, guardarClaveRecuperacion } from './src/services/auth';
 import { registrarAccion } from './src/services/audit';
 import { getDB } from './src/services/database';
 
@@ -78,10 +79,11 @@ function VentasStack() {
   );
 }
 
-export default function App() {
+function AppClinica() {
   const [listo, setListo] = useState(false);
   const [hayAdmin, setHayAdmin] = useState(false);
   const [usuario, setUsuario] = useState(null);
+  const [clavePendiente, setClavePendiente] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -101,15 +103,25 @@ export default function App() {
   }, [usuario]);
 
   if (!listo) {
-    return <View style={{ flex: 1, backgroundColor: '#0B5CAD' }} />;
+    return <View style={{ flex: 1, backgroundColor: '#FFFFFF' }} />;
   }
   if (!hayAdmin) {
     return (
-      <SetupAdminScreen onCreado={(u) => { setHayAdmin(true); setUsuario(u); }} />
+      <SetupAdminScreen onCreado={(u, clave) => { setHayAdmin(true); setUsuario(u); setClavePendiente(clave); }} />
     );
   }
   if (!usuario) {
-    return <LoginScreen onIngreso={setUsuario} />;
+    return (
+      <LoginScreen onIngreso={async (u) => {
+        setUsuario(u);
+        if (u.rol === 'admin' && !(await tieneClaveRecuperacion(u.id))) {
+          setClavePendiente(await guardarClaveRecuperacion(u.id));
+        }
+      }} />
+    );
+  }
+  if (clavePendiente) {
+    return <AnotarClaveScreen clave={clavePendiente} onListo={() => setClavePendiente(null)} />;
   }
 
   return (
@@ -148,4 +160,11 @@ export default function App() {
       </NavigationContainer>
     </AuthContext.Provider>
   );
+}
+
+export default function App() {
+  if (process.env.EXPO_PUBLIC_ES_VENDEDOR === '1') {
+    return <GeneradorLicenciaScreen />;
+  }
+  return <AppClinica />;
 }

@@ -4,8 +4,9 @@ import {
   StyleSheet, ActivityIndicator, SafeAreaView
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { getPacientes } from '../services/database';
+import { getPacientes, getProximasConsultas } from '../services/database';
 import { getTrialStatus, getTrialMessage } from '../services/trial';
+import { formatFecha } from '../utils/fechas';
 
 const PRIMARY = '#0A4D8C';
 
@@ -14,12 +15,17 @@ export default function HomeScreen({ navigation }) {
   const [busqueda, setBusqueda] = useState('');
   const [loading, setLoading] = useState(true);
   const [trialMsg, setTrialMsg] = useState(null);
+  const [proximas, setProximas] = useState([]);
 
   const cargar = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getPacientes(busqueda);
       setPacientes(data);
+      const hoy = new Date();
+      const hoyIso = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+      const citas = await getProximasConsultas();
+      setProximas(citas.filter((c) => c.proxima_consulta >= hoyIso).slice(0, 3));
       try {
         const status = await getTrialStatus();
         setTrialMsg(getTrialMessage(status));
@@ -88,6 +94,17 @@ export default function HomeScreen({ navigation }) {
         </View>
       )}
 
+      {proximas.length > 0 && (
+        <View style={styles.proximas}>
+          <Text style={styles.proximasTitulo}>Próximas consultas</Text>
+          {proximas.map((c) => (
+            <TouchableOpacity key={c.id} onPress={() => abrir({ id: c.paciente_id }, 'consultas')}>
+              <Text style={styles.proximaItem}>{formatFecha(c.proxima_consulta)} · {c.paciente_nombre}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
       {loading ? (
         <ActivityIndicator size="large" color={PRIMARY} style={{ marginTop: 40 }} />
       ) : (
@@ -144,6 +161,9 @@ const styles = StyleSheet.create({
     color: '#555',
     lineHeight: 18,
   },
+  proximas: { marginHorizontal: 16, marginBottom: 8, backgroundColor: '#fff', borderRadius: 12, padding: 12 },
+  proximasTitulo: { fontWeight: '700', color: '#1B2437', marginBottom: 6 },
+  proximaItem: { color: PRIMARY, paddingVertical: 4 },
   container: { flex: 1, backgroundColor: '#f5f5f5' },
   searchBox: { padding: 16, paddingRight: 16, backgroundColor: '#fff' },
   input: {

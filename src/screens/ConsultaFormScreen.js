@@ -3,10 +3,11 @@ import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform
 } from 'react-native';
-import { insertConsulta } from '../services/database';
+import { getPacienteById, insertConsulta } from '../services/database';
 import { getTrialStatus } from '../services/trial';
 import { hoyTexto, parseFechaReal } from '../utils/fechas';
 import { AuthContext } from '../services/session';
+import { programarRecordatorio } from '../services/recordatorios';
 
 const PRIMARY = '#0A4D8C';
 
@@ -55,6 +56,7 @@ export default function ConsultaFormScreen({ route, navigation }) {
   const [tipoLente, setTipoLente] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [fechaReal, setFechaReal] = useState(hoyTexto());
+  const [proxima, setProxima] = useState('');
 
   function parseNum(val) {
   if (val === '' || val === null || val === undefined) return null;
@@ -74,7 +76,7 @@ const tipos = ['Monofocal', 'Bifocal', 'Progresivo', 'Ocupacional', 'Lentes de c
     if (trial.isExpired) {
       Alert.alert(
         'Periodo de prueba finalizado',
-        'No es posible crear nuevas consultas. Puedes seguir consultando los datos existentes.\n\nContacta al desarrollador para continuar.'
+        'En Configuración escribe el código de activación para seguir capturando.'
       );
       return;
     }
@@ -84,12 +86,21 @@ const tipos = ['Monofocal', 'Bifocal', 'Progresivo', 'Ocupacional', 'Lentes de c
       Alert.alert('Error', 'Escribe la fecha real de la consulta como dd/mm/aaaa');
       return;
     }
+    let proximaIso = null;
+    if (proxima.trim()) {
+      proximaIso = parseFechaReal(proxima);
+      if (!proximaIso) {
+        Alert.alert('Error', 'La próxima consulta se escribe como dd/mm/aaaa, o se deja vacía.');
+        return;
+      }
+    }
 
     setSaving(true);
     try {
       const ahora = new Date().toISOString();
+      const id = generateId();
       await insertConsulta({
-        id: generateId(),
+        id,
         paciente_id: pacienteId,
         fecha,
         od_esfera: parseNum(odEsfera),
@@ -105,8 +116,17 @@ const tipos = ['Monofocal', 'Bifocal', 'Progresivo', 'Ocupacional', 'Lentes de c
         av_oi: avOi.trim() || null,
         tipo_lente: tipoLente || null,
         observaciones: observaciones.trim() || null,
+        proxima_consulta: proximaIso,
         fecha_creacion: ahora,
       });
+      if (proximaIso) {
+        const paciente = await getPacienteById(pacienteId);
+        await programarRecordatorio({
+          consultaId: id,
+          nombre: paciente?.nombre || 'Paciente',
+          fecha: proximaIso,
+        });
+      }
       await registrar('Registró una consulta', fecha);
       navigation.goBack();
     } catch (e) {
@@ -128,6 +148,15 @@ const tipos = ['Monofocal', 'Bifocal', 'Progresivo', 'Ocupacional', 'Lentes de c
           keyboardType="numbers-and-punctuation"
         />
         <Text style={styles.hint}>Día en que atendiste al paciente. La fecha de captura se guarda sola.</Text>
+        <Text style={styles.label}>Próxima consulta</Text>
+        <TextInput
+          style={styles.input}
+          value={proxima}
+          onChangeText={setProxima}
+          placeholder="dd/mm/aaaa, si ya la agendaste"
+          keyboardType="numbers-and-punctuation"
+        />
+        <Text style={styles.hint}>Opcional. Avisa el día anterior a las 6 pm y el mismo día a las 8 am.</Text>
 
         {/* OD */}
         <View style={[styles.bloque, { backgroundColor: '#E3F2FD' }]}>
