@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  View, Text, Image, ScrollView, KeyboardAvoidingView, Platform, StyleSheet,
+  View, Text, ScrollView, KeyboardAvoidingView, Platform, StyleSheet,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
@@ -12,7 +12,8 @@ export default function AccesoMarco({ children }) {
       <StatusBar style="dark" />
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.ring}>
-          <Image source={require('../../assets/icon.png')} style={styles.logo} />
+          <Text style={styles.marcaArriba}>Opti</Text>
+          <Text style={styles.marcaAbajo}>Historial</Text>
         </View>
         <View style={styles.tituloRow}>
           <View style={styles.linea} />
@@ -52,17 +53,17 @@ const styles = StyleSheet.create({
   scroll: { flexGrow: 1, paddingHorizontal: 22, paddingTop: 48, paddingBottom: 32 },
   ring: {
     alignSelf: 'center',
-    width: 112,
-    height: 112,
-    borderRadius: 56,
+    width: 124,
+    height: 124,
+    borderRadius: 62,
     borderWidth: 1,
     borderColor: '#D5DCE3',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
     backgroundColor: '#fff',
   },
-  logo: { width: 96, height: 96, borderRadius: 48 },
+  marcaArriba: { color: '#1A4F9C', fontSize: 20, fontWeight: '700' },
+  marcaAbajo: { color: '#1A4F9C', fontSize: 16, fontWeight: '700', marginTop: 1 },
   tituloRow: { flexDirection: 'row', alignItems: 'center', marginTop: 22, gap: 10 },
   linea: { flex: 1, height: 1, backgroundColor: '#D5DCE3' },
   titulo: { color: '#5E6E82', fontSize: 13, fontWeight: '700', letterSpacing: 2.2 },
